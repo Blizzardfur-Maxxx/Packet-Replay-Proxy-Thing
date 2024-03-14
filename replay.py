@@ -9,7 +9,7 @@ def record_packets(remote_socket, client_socket, recorded_packets):
         if not data:
             break
         recorded_packets.append(data)
-        client_socket.sendall(data)  # Forwarding data to client while recording
+        client_socket.sendall(data)
     return recorded_packets
 
 def playback_packets(client_socket, recorded_packets, delay):
@@ -29,7 +29,7 @@ def save_recorded_packets(file_path, recorded_packets, mode):
                 for packet in recorded_packets:
                     f.write(packet)
             print("File saved successfully.")
-            print("Recorded packets:", recorded_packets)  # Debug print
+            print("Recorded packets:", recorded_packets)
         except Exception as e:
             print("Error writing to file:", e)
 
