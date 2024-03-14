@@ -17,15 +17,16 @@ def playback_packets(client_socket, recorded_packets, delay):
         client_socket.sendall(packet)
         time.sleep(delay)
 
-def save_recorded_packets(file_path, recorded_packets):
-    try:
-        with open(file_path, 'wb') as f:
-            for packet in recorded_packets:
-                f.write(packet)
-        print("File saved successfully.")
-        print("Recorded packets:", recorded_packets)  # Debug print
-    except Exception as e:
-        print("Error writing to file:", e)
+def save_recorded_packets(file_path, recorded_packets, mode):
+    if mode == 'record':
+        try:
+            with open(file_path, 'wb') as f:
+                for packet in recorded_packets:
+                    f.write(packet)
+            print("File saved successfully.")
+            print("Recorded packets:", recorded_packets)  # Debug print
+        except Exception as e:
+            print("Error writing to file:", e)
 
 def proxy_server(remote_host, remote_port, mode, delay=1):
     local_host = '127.0.0.1'
@@ -36,7 +37,7 @@ def proxy_server(remote_host, remote_port, mode, delay=1):
     print("File path:", file_path)
 
     recorded_packets = []
-    atexit.register(save_recorded_packets, file_path, recorded_packets)
+    atexit.register(save_recorded_packets, file_path, recorded_packets, mode)
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as proxy_socket:
         proxy_socket.bind((local_host, local_port))
