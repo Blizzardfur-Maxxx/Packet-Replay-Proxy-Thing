@@ -2,6 +2,8 @@ import os
 import socket
 import atexit
 import time
+import gzip
+import io
 
 def record_packets(remote_socket, client_socket, recorded_packets):
     while True:
@@ -25,7 +27,7 @@ def playback_packets(client_socket, recorded_packets, delay):
 def save_recorded_packets(file_path, recorded_packets, mode):
     if mode == 'record':
         try:
-            with open(file_path, 'wb') as f:
+            with gzip.open(file_path, 'wb') as f:
                 for packet in recorded_packets:
                     f.write(packet)
             print("File saved successfully.")
@@ -68,8 +70,9 @@ def proxy_server(remote_host, remote_port, mode, delay=1):
                         recorded_packets.append(remote_response)
                 
             elif mode == 'playback':
-                with open(file_path, 'rb') as f:
-                    recorded_packets = [packet for packet in f.read().split(b'\r\n')]
+                with gzip.open(file_path, 'rb') as f:
+                    decompressed_data = io.BytesIO(f.read())
+                    recorded_packets = [packet for packet in decompressed_data.read().split(b'\r\n')]
                     playback_packets(client_socket, recorded_packets, delay)
             else:
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as remote_socket:
