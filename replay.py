@@ -13,9 +13,14 @@ def record_packets(remote_socket, client_socket, recorded_packets):
     return recorded_packets
 
 def playback_packets(client_socket, recorded_packets, delay):
-    for packet in recorded_packets:
-        client_socket.sendall(packet)
-        time.sleep(delay)
+    try:
+        for packet in recorded_packets:
+            client_socket.sendall(packet)
+            time.sleep(delay)
+    except Exception as e:
+        print("Error sending data to client:", e)
+    finally:
+        client_socket.close()
 
 def save_recorded_packets(file_path, recorded_packets, mode):
     if mode == 'record':
