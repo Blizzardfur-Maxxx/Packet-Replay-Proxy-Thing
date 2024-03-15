@@ -14,11 +14,18 @@ def record_packets(remote_socket, client_socket, recorded_packets):
         client_socket.sendall(data)
     return recorded_packets
 
-def playback_packets(client_socket, recorded_packets, delay):
+def playback_packets(client_socket, file_path, delay):
     try:
-        for packet in recorded_packets:
-            client_socket.sendall(packet)
-            time.sleep(delay)
+        print("File path:", file_path)
+        with gzip.open(file_path, 'rb') as f:
+            while True:
+                packet_length_bytes = f.read(4)  # Read packet length (4 bytes)
+                if not packet_length_bytes:
+                    break
+                packet_length = int.from_bytes(packet_length_bytes, byteorder='big')
+                packet_data = f.read(packet_length)  # Read packet data
+                client_socket.sendall(packet_data)
+                time.sleep(delay)
     except Exception as e:
         print("Error sending data to client:", e)
     finally:
@@ -27,9 +34,12 @@ def playback_packets(client_socket, recorded_packets, delay):
 def save_recorded_packets(file_path, recorded_packets, mode):
     if mode == 'record':
         try:
+            print("File path:", file_path)
             with gzip.open(file_path, 'wb') as f:
                 for packet in recorded_packets:
-                    f.write(packet)
+                    packet_length = len(packet)
+                    f.write(packet_length.to_bytes(4, byteorder='big'))  # Write packet length
+                    f.write(packet)  # Write packet data
             print("File saved successfully.")
             print("Recorded packets:", recorded_packets)
         except Exception as e:
@@ -71,9 +81,14 @@ def proxy_server(remote_host, remote_port, mode, delay=1):
                 
             elif mode == 'playback':
                 with gzip.open(file_path, 'rb') as f:
-                    decompressed_data = io.BytesIO(f.read())
-                    recorded_packets = [packet for packet in decompressed_data.read().split(b'\r\n')]
-                    playback_packets(client_socket, recorded_packets, delay)
+                    while True:
+                        packet_length_bytes = f.read(4)  # Read packet length (4 bytes)
+                        if not packet_length_bytes:
+                            break
+                        packet_length = int.from_bytes(packet_length_bytes, byteorder='big')
+                        packet_data = f.read(packet_length)  # Read packet data
+                        client_socket.sendall(packet_data)
+                        time.sleep(delay)
             else:
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as remote_socket:
                     remote_socket.connect((remote_host, remote_port))
